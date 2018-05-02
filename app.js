@@ -2,25 +2,58 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+http.listen(3000, function() {
+    console.log('listening on localhost:3000');
+ });
+
 app.get('/', function(req, res) {
-   res.sendfile('index.html');
+   res.sendfile(__dirname + '/index.html');
 });
 
+var users = [];
+var connections = [];
+
 //Indításnál nevet kell választani, már létezőt nem lehet
-io.on('connection', function(socket) {
-   console.log('A user connected');
-   socket.on('setUserName', function() {
-       if(0){
+io.sockets.on('connection', function(socket) {
+    connections.push(socket);
+   console.log('User connected: %s sockets connected',connections.length);
+   
+   socket.on('disconnect', function(data){
+       users.splice(users.indexOf(socket.username), 1);
+       updateUsernames();
+        connections.splice(connections.indexOf(socket), 1);
+        console.log('User disconnected: %s sockets connected',connections.length);
+   });
+   
+   socket.on('send message', function(data){
+       console.log(data);
+    io.sockets.emit('new message', {msg: data, user: socket.username});
+   });
+
+   socket.on('new user', function(data, callback){
+       callback(true);
+       socket.username = data;
+       users.push(socket.username);
+       updateUsernames();
+    });
+
+    function  updateUsernames(){
+        io.sockets.emit('get users', users);
+    }
+/*   socket.on('setUserName', function(data) {
+       if(userExist(data)!=undefined){
            socket.emit('userAlreadyExist');
+           console.log('User already exist (on server side)');
        }
        else{
            socket.emit('setUserName');
+           console.log('Username is set (on server side)');
        }
    });
 
    //Lekérjük az online userek listáját és kilistázzuk a kliensen
    socket.on('getUsers', function() {
-       socket.emit('listUsers');
+       socket.emit('listUsers', users);
    });
 
    //Chatszobát akar valaki létrehozni a meghívottaknak küldünk üzenetet hogy csatlakozzanak
@@ -50,9 +83,6 @@ io.on('connection', function(socket) {
 
    socket.on('disconnect', function () {
       console.log('A user disconnected');
-   });
+   });*/
 });
 
-http.listen(3000, function() {
-   console.log('listening on localhost:3000');
-});
