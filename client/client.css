@@ -1,0 +1,15 @@
+.container {
+    margin-top: 30px;
+}
+#message-area, .alert {
+    display: none;
+}
+.call-btn {
+    margin-left: 15px;
+}
+#disconnect-btn {
+    margin: 15px;
+}
+#videos {
+    background: #CCCCCC;
+}
