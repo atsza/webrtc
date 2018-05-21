@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WebRTC Chat</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="client/client.css">
+
+    </head>
+    <body>
+        <div class="container">
+            <div id="user-form-area" class="row">
+                <div class="col-md-12">
+                    <div id="name-alert" class="alert alert-danger alert-dismissible" role="alert">
+                        Username taken! Please choose another username!
+                    </div>
+                    <form id="user-form">
+                        <div class="form-group">
+                            <label>Enter username</label>
+                            <input class="form-control" id="username"></textarea>
+                        <br/>
+                        <input type="submit" class="btn btn-primary" value="Log in"/>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="message-area" class="row">
+        <div class="col-md-4">
+            <div class="well">
+                <h3>Online Users</h3>
+                <div id="disconnect-btn" class="btn btn-danger">Disconnect</div>
+                <ul class="list-group" id="users"></ul>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="chat" id="chat"></div>
+            <form id="message-form">
+                <div class="form-group">
+                    <label>Enter messsage</label>
+                    <textarea class="form-control" id="message"></textarea>
+                    <br/>
+                    <input type="submit" class="btn btn-primary" value="Send Message"/>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="call-area">
+        <div class="col-md-12">
+            <div class="col-md-4"></div>
+            <div class="col-md-8">
+                <div id="videos">
+                    <video id="localVideo" autoplay="autoplay" muted="muted" playsinline="playsinline"></video>
+                    <video id="remoteVideo" autoplay="autoplay" playsinline="playsinline"></video>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="/client/client.js"></script>
+</body>
+</html>
