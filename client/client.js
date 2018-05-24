@@ -63,12 +63,13 @@ $(function () {
             video: true
         }).then(
                 (stream) => {
-                    setupStreamAndOffer(stream);
-                    session.fromUser = username;
-                    session.toUser = target;
-                    session.type = 'offer';
-                    console.log(session);
-                    socket.emit('message', session);
+                    setupStreamAndOffer(stream, () => {
+                        session.fromUser = username;
+                    	session.toUser = target;
+	                    session.type = 'offer';
+    	                console.log(session);
+        	            socket.emit('message', session);
+                    });
                 });
     });
 
@@ -79,7 +80,7 @@ $(function () {
 
     socket.on('message', (data) => {
         console.log(data);
-        localMessage= data;    
+        localMessage = data;    
         if (data.toUser == username) {
             if (data.type == 'offer') {
                 pc = new RTCPeerConnection(null);
@@ -184,9 +185,12 @@ $(function () {
         pc.addStream(localStream);
     }
 
-    function setupStreamAndOffer(stream) {
+    function setupStreamAndOffer(stream, cb) {
         setupStream(stream);
-        pc.createOffer(offerOptions).then(setupRTCData);
+        pc.createOffer(offerOptions).then((rtcData) => {
+	        setupRTCData(rtcData);
+    	    cb();
+        });
     }
 
     function setupRTCData(rtcData) {
