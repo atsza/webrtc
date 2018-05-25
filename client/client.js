@@ -79,27 +79,28 @@ $(function () {
     });
 
     socket.on('message', (data) => {
-        console.log(data);
+        target = data.fromUser;
         localMessage = data;    
         if (data.toUser == username) {
             if (data.type == 'offer') {
                 pc = new RTCPeerConnection(null);
-                // pc.onicecandidate = (event) => {
-                //     if (event.candidate) {
-                //         socket.emit('message', {
-                //             toUser: data.fromUser,
-                //             fromUser: username,
-                //             type: 'candidate',
-                //             label: event.candidate.sdpMLineIndex,
-                //             id: event.candidate.sdpMid,
-                //             candidate: event.candidate.candidate
-                //         });
-                //     };
-                // };
-                // pc.onaddstream = (event) => {
-                //     remoteStream = event.stream;
-                //     remoteVideo.srcObject = remoteStream;
-                // };
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('message', {
+                            toUser: target,
+                            fromUser: username,
+                            type: 'candidate',
+                            label: event.candidate.sdpMLineIndex,
+                            id: event.candidate.sdpMid,
+                            candidate: event.candidate
+                        });
+                    };
+                };
+                pc.onaddstream = (event) => {
+                    remoteStream = event.stream;
+                    remoteVideo.srcObject = remoteStream;
+                };
 
                 navigator.mediaDevices.getUserMedia({
                     audio: true,
@@ -107,26 +108,32 @@ $(function () {
                 }).then(
                     (stream) => {
                         setupStream(stream);
+                        console.log(localMessage.description);
                         pc.setRemoteDescription(new RTCSessionDescription(localMessage.description));
                         pc.createAnswer().then((sessionData) => {
                             setupRTCData(sessionData);
                             session.toUser = localMessage.fromUser;
                             session.fromUser = username;
                             session.type = 'answer';
+                            console.log(session);
                             socket.emit('message', session);
                         });
-                    }
-                );
-            } else if (data.type == 'answer') {
+                    });
+                
+
+            } 
+            else if (data.type == 'answer') {
+                console.log(localMessage.description);
                 pc.setRemoteDescription(new RTCSessionDescription(localMessage.description));
-            } else if (data.type === 'candidate') {
-                var candidate = new RTCIceCandidate({
-                    sdpMLineIndex: data.label,
-                    candidate: data.candidate
-                });
-                console.log(candidate);
-                pc.addIceCandidate(candidate);
-            } else if (data === 'bye') {
+                
+            } 
+            else if (data.type === 'candidate') {
+                console.log(data);
+                if(pc.remoteDescription.type){
+                    pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            } 
+            else if (data === 'bye') {
                 pc.close();
                 pc = null;
             }
@@ -165,18 +172,19 @@ $(function () {
         localVideo.srcObject = stream;
 
         pc = new RTCPeerConnection(null);
-        // pc.onicecandidate = (event) => {
-        //     if (event.candidate) {
-        //         socket.emit('message', {
-        //             toUser: target,
-        //             fromUser: username,
-        //             type: 'candidate',
-        //             label: event.candidate.sdpMLineIndex,
-        //             id: event.candidate.sdpMid,
-        //             candidate: event.candidate.candidate
-        //         });
-        //     };
-        // };
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log("wtf?")
+                socket.emit('message', {
+                    toUser: target,
+                    fromUser: username,
+                    type: 'candidate',
+                    label: event.candidate.sdpMLineIndex,
+                    id: event.candidate.sdpMid,
+                    candidate: event.candidate
+                });
+            };
+        };
         pc.onaddstream = (event) => {
             remoteStream = event.stream;
             remoteVideo.srcObject = remoteStream;

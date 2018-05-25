@@ -12,9 +12,6 @@ app.get('/', function (req, res) {
     res.sendfile(__dirname + '/client/index.html');
 });
 
-class User {
-    constructor(username, socket) { }
-}
 
 var users = [];
 var connections = [];
@@ -65,7 +62,7 @@ io.sockets.on('connection', (socket) => {
 
     socket.on('message', (data) => {
         console.log(data.toUser);
-        console.log(data.description);
+        console.log(data.type);
         let toUser = getUserByName(data.toUser);
         socket.to(toUser.socket).emit('message', data);
     });
