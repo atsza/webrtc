@@ -8,7 +8,7 @@ $(function () {
     var $userForm = $('#user-form');
     var $users = $('#users');
     var $username = $('#username');
-    
+
     var username = '';
     var target;
     var localStream;
@@ -80,9 +80,9 @@ $(function () {
 
     socket.on('message', (data) => {
         target = data.fromUser;
-        localMessage = data;    
         if (data.toUser == username) {
             if (data.type == 'offer') {
+                localMessage = data;
                 pc = new RTCPeerConnection(null);
 
                 pc.onicecandidate = (event) => {
@@ -119,20 +119,20 @@ $(function () {
                             socket.emit('message', session);
                         });
                     });
-                
 
-            } 
+
+            }
             else if (data.type == 'answer') {
-                console.log(localMessage.description);
-                pc.setRemoteDescription(new RTCSessionDescription(localMessage.description));
-                
-            } 
+                console.log(data.description);
+                pc.setRemoteDescription(new RTCSessionDescription(data.description));
+
+            }
             else if (data.type === 'candidate') {
                 console.log(data);
                 if(pc.remoteDescription.type){
                     pc.addIceCandidate(new RTCIceCandidate(data.candidate));
                 }
-            } 
+            }
             else if (data === 'bye') {
                 pc.close();
                 pc = null;
