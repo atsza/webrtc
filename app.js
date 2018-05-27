@@ -49,8 +49,13 @@ io.sockets.on('connection', (socket) => {
     });
 
     socket.on('user disconnect', (data) => {
-        socket.username = '';
-        let index = users.indexOf(data)
+        let index = 0;
+        for (let user of users) {
+            if (user.username === data) {
+                break;
+            }
+            index++;
+        }
         users.splice(index, 1);
         updateUsernames();
     });

@@ -8,6 +8,7 @@ $(function () {
     var $userForm = $('#user-form');
     var $users = $('#users');
     var $username = $('#username');
+    var $callArea = $('#call-area');
 
     var username = '';
     var target;
@@ -55,8 +56,24 @@ $(function () {
         username = '';
     });
 
+    $(document).on('click', '#endcall-btn', (event) => {
+        session.fromUser = username;
+        session.toUser = target;
+        session.type = 'bye';
+        
+        remoteVideo.srcObject= null;
+        localStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        pc.close();
+        pc = null;
+        $callArea.hide();
+        socket.emit('message', session);
+    });
+
     $(document).on('click', '.call-btn', (event) => {
         target = event.target.getAttribute('data-user');
+        $callArea.show();
 
         navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -82,6 +99,7 @@ $(function () {
         target = data.fromUser;
         if (data.toUser == username) {
             if (data.type == 'offer') {
+                $callArea.show();
                 localMessage = data;
                 pc = new RTCPeerConnection(null);
 
@@ -133,9 +151,15 @@ $(function () {
                     pc.addIceCandidate(new RTCIceCandidate(data.candidate));
                 }
             }
-            else if (data === 'bye') {
+            else if (data.type === 'bye') {
+                console.log(data);
+                remoteVideo.srcObject= null;
+                localStream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
                 pc.close();
                 pc = null;
+                $callArea.hide();
             }
         }
     });
