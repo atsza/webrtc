@@ -12,9 +12,6 @@ app.get('/', function (req, res) {
     res.sendfile(__dirname + '/client/index.html');
 });
 
-class User {
-    constructor(username, socket) { }
-}
 
 var users = [];
 var connections = [];
@@ -52,8 +49,13 @@ io.sockets.on('connection', (socket) => {
     });
 
     socket.on('user disconnect', (data) => {
-        socket.username = '';
-        let index = users.indexOf(data)
+        let index = 0;
+        for (let user of users) {
+            if (user.username === data) {
+                break;
+            }
+            index++;
+        }
         users.splice(index, 1);
         updateUsernames();
     });
@@ -65,7 +67,7 @@ io.sockets.on('connection', (socket) => {
 
     socket.on('message', (data) => {
         console.log(data.toUser);
-        console.log(data.description);
+        console.log(data.type);
         let toUser = getUserByName(data.toUser);
         socket.to(toUser.socket).emit('message', data);
     });

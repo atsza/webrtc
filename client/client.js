@@ -8,7 +8,8 @@ $(function () {
     var $userForm = $('#user-form');
     var $users = $('#users');
     var $username = $('#username');
-    
+    var $callArea = $('#call-area');
+
     var username = '';
     var target;
     var localStream;
@@ -55,8 +56,24 @@ $(function () {
         username = '';
     });
 
+    $(document).on('click', '#endcall-btn', (event) => {
+        session.fromUser = username;
+        session.toUser = target;
+        session.type = 'bye';
+        
+        remoteVideo.srcObject= null;
+        localStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        pc.close();
+        pc = null;
+        $callArea.hide();
+        socket.emit('message', session);
+    });
+
     $(document).on('click', '.call-btn', (event) => {
         target = event.target.getAttribute('data-user');
+        $callArea.show();
 
         navigator.mediaDevices.getUserMedia({
             audio: true,
@@ -79,27 +96,29 @@ $(function () {
     });
 
     socket.on('message', (data) => {
-        console.log(data);
-        localMessage = data;    
+        target = data.fromUser;
         if (data.toUser == username) {
             if (data.type == 'offer') {
+                $callArea.show();
+                localMessage = data;
                 pc = new RTCPeerConnection(null);
-                // pc.onicecandidate = (event) => {
-                //     if (event.candidate) {
-                //         socket.emit('message', {
-                //             toUser: data.fromUser,
-                //             fromUser: username,
-                //             type: 'candidate',
-                //             label: event.candidate.sdpMLineIndex,
-                //             id: event.candidate.sdpMid,
-                //             candidate: event.candidate.candidate
-                //         });
-                //     };
-                // };
-                // pc.onaddstream = (event) => {
-                //     remoteStream = event.stream;
-                //     remoteVideo.srcObject = remoteStream;
-                // };
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('message', {
+                            toUser: target,
+                            fromUser: username,
+                            type: 'candidate',
+                            label: event.candidate.sdpMLineIndex,
+                            id: event.candidate.sdpMid,
+                            candidate: event.candidate
+                        });
+                    };
+                };
+                pc.onaddstream = (event) => {
+                    remoteStream = event.stream;
+                    remoteVideo.srcObject = remoteStream;
+                };
 
                 navigator.mediaDevices.getUserMedia({
                     audio: true,
@@ -107,28 +126,40 @@ $(function () {
                 }).then(
                     (stream) => {
                         setupStream(stream);
+                        console.log(localMessage.description);
                         pc.setRemoteDescription(new RTCSessionDescription(localMessage.description));
                         pc.createAnswer().then((sessionData) => {
                             setupRTCData(sessionData);
                             session.toUser = localMessage.fromUser;
                             session.fromUser = username;
                             session.type = 'answer';
+                            console.log(session);
                             socket.emit('message', session);
                         });
-                    }
-                );
-            } else if (data.type == 'answer') {
-                pc.setRemoteDescription(new RTCSessionDescription(localMessage.description));
-            } else if (data.type === 'candidate') {
-                var candidate = new RTCIceCandidate({
-                    sdpMLineIndex: data.label,
-                    candidate: data.candidate
+                    });
+
+
+            }
+            else if (data.type == 'answer') {
+                console.log(data.description);
+                pc.setRemoteDescription(new RTCSessionDescription(data.description));
+
+            }
+            else if (data.type === 'candidate') {
+                console.log(data);
+                if(pc.remoteDescription.type){
+                    pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            }
+            else if (data.type === 'bye') {
+                console.log(data);
+                remoteVideo.srcObject= null;
+                localStream.getTracks().forEach(function(track) {
+                    track.stop();
                 });
-                console.log(candidate);
-                pc.addIceCandidate(candidate);
-            } else if (data === 'bye') {
                 pc.close();
                 pc = null;
+                $callArea.hide();
             }
         }
     });
@@ -165,18 +196,19 @@ $(function () {
         localVideo.srcObject = stream;
 
         pc = new RTCPeerConnection(null);
-        // pc.onicecandidate = (event) => {
-        //     if (event.candidate) {
-        //         socket.emit('message', {
-        //             toUser: target,
-        //             fromUser: username,
-        //             type: 'candidate',
-        //             label: event.candidate.sdpMLineIndex,
-        //             id: event.candidate.sdpMid,
-        //             candidate: event.candidate.candidate
-        //         });
-        //     };
-        // };
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log("wtf?")
+                socket.emit('message', {
+                    toUser: target,
+                    fromUser: username,
+                    type: 'candidate',
+                    label: event.candidate.sdpMLineIndex,
+                    id: event.candidate.sdpMid,
+                    candidate: event.candidate
+                });
+            };
+        };
         pc.onaddstream = (event) => {
             remoteStream = event.stream;
             remoteVideo.srcObject = remoteStream;

@@ -13,3 +13,6 @@
 #videos {
     background: #CCCCCC;
 }
+#call-area{
+    display: none;
+}
